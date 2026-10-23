@@ -4,9 +4,9 @@
 // Qué hace:
 //  1. Lee src/index.html.
 //  2. Sustituye cada <link rel="stylesheet" href="..."> local por un <style> con su CSS,
-//     y mete fuentes/imágenes referenciadas con url(...) como data-URI.
-//  3. Une los scripts del bloque <!-- build:scripts --> en un solo <script>, dentro de
-//     (()=>{ 'use strict'; ... })(); — igual que estaba el juego original.
+//     y mete fuentes e imágenes (url(...) del CSS y <img src> del HTML) como data-URI.
+//  3. Une los scripts del bloque <!-- build:scripts --> en un solo <script>, envuelto como
+//     estaba en el juego original (ver WRAP), y mete las librerías de vendor/.
 //  4. Escribe docs/index.html: es a la vez la web de GitHub Pages y el archivo para jugar offline.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join, extname } from 'node:path';
@@ -15,17 +15,41 @@ import { fileURLToPath } from 'node:url';
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const SRC = join(ROOT, 'src');
 const OUT = join(ROOT, 'docs', 'index.html');
+// Cómo se envuelve el código unido:
+//   'iife'   → (()=>{ 'use strict'; … })();   (nada queda global)
+//   'script' → 'use strict'; …                 (un único <script> en modo estricto)
+//   'plain'  → …                               (un único <script> normal)
+const WRAP = 'iife';
+
+// Recursos binarios que el juego lee como base64 desde JS (este juego no tiene).
+const ASSETS = null;
 
 const MIME = { '.woff2': 'font/woff2', '.woff': 'font/woff', '.ttf': 'font/ttf', '.png': 'image/png',
   '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml',
   '.gif': 'image/gif', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wav': 'audio/wav', '.glb': 'model/gltf-binary' };
 
 const isLocal = (p) => !/^(https?:|data:|\/\/)/.test(p);
+const b64 = (file) => readFileSync(file).toString('base64');
 const dataUri = (file) => {
   const mime = MIME[extname(file).toLowerCase()];
   if (!mime) throw new Error(`Tipo de archivo sin MIME conocido: ${file}`);
-  return `data:${mime};base64,${readFileSync(file).toString('base64')}`;
+  return `data:${mime};base64,${b64(file)}`;
 };
+
+// 1. Recursos embebidos
+if (ASSETS) {
+  const obj = (map) => Object.entries(map).map(([k, f]) => `${k}:'${b64(join(SRC, 'assets', f))}'`);
+  const gen = [
+    '// ARCHIVO GENERADO por build.mjs a partir de src/assets/ — no lo edites a mano.',
+    ASSETS.header[0],
+    `const HAND_GLB={${obj(ASSETS.HAND_GLB).join(',')}};`,
+    ASSETS.header[1],
+    'const ASSET={',
+    obj(ASSETS.ASSET).join(',\n') + ',',
+    '};'
+  ].join('\n');
+  writeFileSync(join(SRC, 'js', '01-assets.gen.js'), gen + '\n');
+}
 
 function inlineCss(cssPath) {
   const css = readFileSync(cssPath, 'utf8');
@@ -39,18 +63,25 @@ let html = readFileSync(join(SRC, 'index.html'), 'utf8');
 html = html.replace(/<link rel="stylesheet" href="([^"]+)">/g, (m, href) =>
   isLocal(href) ? `<style>\n${inlineCss(join(SRC, href)).trim()}\n</style>` : m);
 
+// Imágenes del HTML
+html = html.replace(/<img([^>]*?) src="([^"]+)"/g, (m, attrs, src) =>
+  isLocal(src) ? `<img${attrs} src="${dataUri(join(SRC, src))}"` : m);
+
 // JS: el bloque marcado se une en un único script
 html = html.replace(/<!-- build:scripts[^>]*-->([\s\S]*?)<!-- \/build:scripts -->/, (m, block) => {
   const files = [...block.matchAll(/<script src="([^"]+)"><\/script>/g)].map((x) => x[1]);
   if (!files.length) throw new Error('El bloque build:scripts está vacío');
   const body = files.map((f) => {
-    const code = readFileSync(join(SRC, f), 'utf8').replace(/^'use strict';\n/m, '');
+    // quita solo el 'use strict' de cabecera de cada archivo (justo tras su comentario inicial)
+    const code = readFileSync(join(SRC, f), 'utf8').replace(/^(\/\*[^\n]*\*\/\n)?'use strict';\n/, '$1');
     return `// ---- ${f} ----\n${code.trim()}`;
-  }).join('\n\n');
-  return `<script>\n(()=>{\n'use strict';\n${body}\n})();\n</script>`;
+  }).join('\n\n').replace(/<\/script/gi, '<\\/script');
+  if (WRAP === 'iife') return `<script>\n(()=>{\n'use strict';\n${body}\n})();\n</script>`;
+  if (WRAP === 'script') return `<script>\n'use strict';\n${body}\n</script>`;
+  return `<script>\n${body}\n</script>`;
 });
 
-// Cualquier otro <script src> local suelto (por ejemplo librerías en vendor/)
+// Cualquier otro <script src> local suelto (las librerías de vendor/)
 html = html.replace(/<script src="([^"]+)"><\/script>/g, (m, src) =>
   isLocal(src) ? `<script>\n${readFileSync(join(SRC, src), 'utf8').replace(/<\/script/gi, '<\\/script')}\n</script>` : m);
 
