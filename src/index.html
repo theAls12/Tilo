@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tilo y la Estrella</title>
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="game" aria-label="Juego de plataformas Tilo y la Estrella"></canvas>
+
+<div id="menu" class="overlay">
+  <div class="eyebrow">Teatro de papel · Función en tres actos</div>
+  <h1 class="title"><span class="big">Tilo</span><span class="small">y la Estrella</span></h1>
+  <div class="row"><button class="ticket big" id="btnPlay"><span><span class="nm">¡Que empiece la función!</span></span></button></div>
+  <div class="row" id="levels"></div>
+  <p class="keys" id="keysHint"><kbd>←</kbd><kbd>→</kbd> moverse · <kbd>↑</kbd>/<kbd>Z</kbd> saltar · <kbd>Espacio</kbd> espadazo · <kbd>Esc</kbd> pausa · <kbd>M</kbd> sonido · <kbd>F</kbd> pantalla completa</p>
+</div>
+
+<div id="pause" class="overlay dim" hidden>
+  <div class="card"><span class="sub">Entreacto</span><h2>Pausa</h2>
+    <div class="row"><button class="ticket big" id="btnResume"><span><span class="nm">Seguir</span></span></button><button class="ticket alt" id="btnPauseMenu"><span><span class="nm">Menú</span></span></button></div>
+  </div>
+</div>
+
+<div id="done" class="overlay" hidden>
+  <div class="card"><span class="sub" id="doneSub">Fin del Acto I</span><h2 id="doneTitle">¡Bravo!</h2>
+    <p id="doneStats">Pajaritas 0 / 0 · Tiempo 0:00</p>
+    <div class="row"><button class="ticket big" id="btnNext"><span><span class="nm">Siguiente acto</span></span></button><button class="ticket alt" id="btnDoneMenu"><span><span class="nm">Menú</span></span></button></div>
+  </div>
+</div>
+
+<button id="pauseBtn" hidden aria-label="Pausa"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg></button>
+<button id="fsBtn" hidden aria-label="Pantalla completa"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="currentColor"><path d="M4 9 V4 H9 V6 H6 V9 Z M15 4 H20 V9 H18 V6 H15 Z M20 15 V20 H15 V18 H18 V15 Z M9 20 H4 V15 H6 V18 H9 Z"/></svg></button>
+<div id="rotate" class="overlay dim" hidden style="z-index:7"><div class="card"><span class="sub">Un momento</span><h2>Gira el móvil</h2><p>Tilo se juega en horizontal.</p></div></div>
+<div id="touch" hidden>
+  <div class="grp"><button class="tb" data-k="left" aria-label="Izquierda"><svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true" fill="currentColor"><path d="M16 4 L6 12 L16 20 Z"/></svg></button><button class="tb" data-k="right" aria-label="Derecha"><svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true" fill="currentColor"><path d="M8 4 L18 12 L8 20 Z"/></svg></button></div>
+  <div class="grp"><button class="tb" data-k="atk" aria-label="Espadazo"><svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true" fill="currentColor"><path d="M19 3 L21 3 L21 5 L11 15 L9 13 Z"/><path d="M6 12 L12 18 L10.5 19.5 L8.5 17.5 L5 21 L3 19 L6.5 15.5 L4.5 13.5 Z"/></svg></button><button class="tb big" data-k="jump" aria-label="Saltar"><svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true" fill="currentColor"><path d="M4 17 L12 6 L20 17 Z"/></svg></button></div>
+</div>
+
+<!-- build:scripts (el build los une en un solo bloque, en este orden) -->
+<script src="js/01-canvas.js"></script>
+<script src="js/02-helpers.js"></script>
+<script src="js/03-stickers.js"></script>
+<script src="js/04-levels.js"></script>
+<script src="js/05-scenery.js"></script>
+<script src="js/06-characters.js"></script>
+<script src="js/07-audio.js"></script>
+<script src="js/08-state.js"></script>
+<script src="js/09-input.js"></script>
+<script src="js/10-flow.js"></script>
+<script src="js/11-physics.js"></script>
+<script src="js/12-particles.js"></script>
+<script src="js/13-update.js"></script>
+<script src="js/14-render.js"></script>
+<script src="js/15-main.js"></script>
+<!-- /build:scripts -->
+</body>
+</html>
